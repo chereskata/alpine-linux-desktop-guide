@@ -205,7 +205,7 @@ export PS1="(chroot) $PS1"
 # generate extlinux.conf and patch paths to point to /EFI/alpine/
 update-extlinux
 sed -e "s/LINUX vm/LINUX \/EFI\/alpine\/vm/" /boot/extlinux.conf |\
-  sed -e "s/INITRD init/INITRD \/EFI\/alpine\/init/ > /boot/efi/EFI/syslinux/extlinux.conf
+  sed -e "s/INITRD init/INITRD \/EFI\/alpine\/init/" > /boot/efi/EFI/syslinux/extlinux.conf
 
 # copy finished config, kernel and initramfs to EFI partition
 cp /boot/extlinux.conf /boot/efi/EFI/syslinux/
