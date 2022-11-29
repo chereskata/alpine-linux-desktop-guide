@@ -214,7 +214,7 @@ umount -l /mnt/sys
 
 # register kernel as bootloader in uefi interface (old kernel version)
 UUID_ENCRYPTED_PARTITION=$(blkid | grep ${DEVNAME_PHYSICAL_DISK} | grep crypto_LUKS | sed -e "s/.* UUID=\"//" | sed -e "s/\" .*//")
-UUID_DECRYPTED_LOGIGAL_ROOT_PARTITION=$(blkid | grep ${DEVNAME_DECRYPTED_VOLGROUP} | grep root | sed -e "s/.* UUID=\"//" | sed -e "s/\" .*//")
+UUID_DECRYPTED_LOGICAL_ROOT_PARTITION=$(blkid | grep ${DEVNAME_DECRYPTED_VOLGROUP} | grep root | sed -e "s/.* UUID=\"//" | sed -e "s/\" .*//")
 
 # previous kernel
 KERNEL_ARGS_OLD="quiet root=UUID=${UUID_DECRYPTED_LOGICAL_ROOT_PARTITION} \
