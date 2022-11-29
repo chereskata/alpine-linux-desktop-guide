@@ -1,6 +1,227 @@
 # alpine-linux-desktop-guide
 A memorization help for myself to remember what i have done to setup my laptop workstation
 
+## Installing to disk
+This notes take some implicit assumptions regarding disk naming and the use
+of an uefi capable machine as well as booting with syslinux efi.
+
+The installation process contains some variables. These made my work easier
+
+### Step zero: create the installation media
+Gather the install media from [here](https://alpinelinux.org/downloads/)
+and dd it to your storage. For example
+```sh
+su -l
+dd if=/tmp/alpine-standart.iso of=/dev/sdc; sync
+```
+
+### Step two: register the preferred keyboard language
+```sh
+setup-keymap
+```
+
+### Step three: set the hostname
+```sh
+setup-hostname
+```
+
+### Step four: change the timezone
+```sh
+setup-timezone
+```
+
+### Step five: configure networking
+```sh
+setup-interfaces
+rc-service networking restart
+```
+
+### Step six: some service related stuff
+```sh
+rc-update add networking boot
+rc-update add urandom boot
+rc-update add acpid default
+```
+
+### Step seven: start powermanagement in live session
+```sh
+rc-service acpid start
+```
+
+### Step eight: point hostname domain to local host ip
+```sh
+HOSTNAME=$(echo /etc/hostname)
+sed -e "s/localhost /${HOSTNAME} localhost /" /etc/hosts > /tmp/hosts
+cp /tmp/hosts /etc/hosts
+```
+
+### Step nine: enable ntp
+```sh
+setup-ntp
+```
+
+### Step ten: initialize apk package manager
+```sh
+setup-apkrepos
+# change mirror to https
+sed -e "s/https/http/" /etc/apk/repositories > /tmp/repositories
+cp /tmp/repositories /etc/apk/repositories
+
+apk update
+apk upgrade -a
+```
+
+### Step eleven: install needed tools
+```sh
+apk add lvm2 util-linux cryptsetup e2fsprogs dosfstools cfdisk mkinitfs syslinux efibootmgr
+```
+
+### Step twelve: raw partitioning
+First of all a gpt partition is needed with following layout
+| first partition | second partition |
+| --- | --- |
+| EFI (topmost item) | Linux (Default) |
+EFI partition will hold bootloader, kernel and initramfs an is FAT32
+Linux partition will be encrypted with LUKS later on
+```sh
+# overwrite first 100M with junk (could be sda instead of nvme0n1)
+DEVNAME_PHYSICAL_DISC="nvme0n1"
+dd if=/dev/urandom/ of=/dev/${DEVNAME_PHYSICAL_DISC} count=200000
+# partitioning tool (could be automated)
+cfdisk /dev/${DEVNAME_PHYSICAL_DISC}
+```
+
+### Step thirteen: raw partition formatting
+```sh
+DEVNAME_EFI_PARTITION=""
+DEVNAME_ENCRYPTED_PARTITION=""
+# nvme drives have partition names pX instead of X
+case ${DEVNAME_PHYSICAL_DISC} in
+  *nvme*)
+    DEVNAME_EFI_PARTITION=${DEVNAME_PHYSICAL_DISK}p1
+    DEVNAME_ENCRYPTED_PARTITION=${DEVNAME_PHYSICAL_DISK}p2
+  ;;
+
+  *)
+    DEVNAME_EFI_PARTITION=${DEVNAME_PHYSICAL_DISK}1
+    DEVNAME_ENCRYPTED_PARTITION=${DEVNAME_PHYSICAL_DISK}2
+  ;;
+esac
+    
+
+# optimized for security of encrypted partition
+cryptsetup -v -c aes-xts-plain64 -s 512 --hash sha512 --pbkdf pbkdf2 --iter-time 5000 --use-random luksFormat /dev/${DEVNAME_ENCRYPTED_PARTITION}
+mkfs.fat -F32 /dev/${DEVNAME_EFI_PARTITION}
+```
+
+### Step fourteen: create lvm backed root and swap on the encrypted partition
+```sh
+# note: some naming scheme that i like
+DEVNAME_DECRYPTED_PARTITION=${DEVNAME_ENCRYPTED_PARTITION}.dec
+DEVNAME_DECRYPTED_VOLGROUP=${DEVNAME_ENCRYPTED_PARTITION}.vg
+
+cryptsetup open /dev/nvme0n1p2 ${DEVNAME_DECRYPTED_PARTITION}
+pvcreate /dev/mapper/${DEVNAME_DECRYPTED_PARTITION}
+vgcreate ${DEVNAME_DECRYPTED_VOLGROUP} /dev/mapper/${DEVNAME_DECRYPTED_PARTITION}
+
+lvcreate -L 2G ${DEVNAME_DECRYPTED_VOLGROUP} -n swap
+lvcreate -l 100%FREE ${DEVNAME_DECRYPTED_VOLGROUP} -n root
+```
+
+### Step fifteen: virtual partition formatting
+```sh
+mkswap /dev/mapper/${DEVNAME_DECRYPTED_VOLGROUP}-swap
+mkfs.ext4 /dev/mapper/${DEVNAME_DECRYPTED_VOLGROUP}-root
+```
+
+### Step sixteen: install to disk
+```sh
+# mount /
+mount -t ext4 /dev/mapper/${DEVNAME_DECRYPTED_VOLGROUP}-root /mnt/
+
+# mount swap
+swapon /dev/mapper/${DEVNAME_DECRYPTED_VOLGROUP}-swap
+
+# mount the EFI partition inside /mnt/boot
+mkdir -p /mnt/boot/efi
+mount -t vfat /dev/nvme0n1p1 /mnt/boot/efi/
+
+# finally the setup
+setup-disk -m sys /mnt/
+```
+
+### Step seventeen: fix swap missing in /mnt/etc/fstab
+```sh
+# search swap partition by UUID and add fstab entry for it
+(blkid | grep swap | sed -e "s/.* UUID=\"/UUID=/" | sed -e "s/\" .*/    swap    swap    defaults    0 0 /") >> /etc/fstab
+# note: i am not sure if other partitions are by uuid or by path
+#       all mounts without UUID should be replaced with UUID notion where
+#       applicable
+```
+
+### Step eighteen: change initramfs modules to the ones needed
+```sh
+INITRAMFS_MODULES="base usb ext4 lvm nvme cryptsetup keymap nvme"
+sed -e "s/features=\".*\"/features=\"${INITRAMFS_MODULES\"/" /mnt/etc/mkinitfs/mkinitfs.conf
+# note: your range may differ
+mkinitfs -c /mnt/etc/mkinitfs/mkinitfs.conf -b /mnt/ $(ls /mnt/lib/modules/)
+```
+
+### Step nineteen: add syslinux EFI to the game
+alpine as by the time of writing only supports the automatic install of
+syslinux in DOS/MBR mode. This does not fit my usecase, so some adjustments
+have to be made
+
+when a kernel update comes, the copy steps of vmlinuz and initramfs to EFI
+partition have to be done by hand (as of time of writing)
+```sh
+# create dirs in the EFI partition
+mkdir -p /mnt/boot/efi/EFI/syslinux
+mkdir -p /mnt/boot/efi/EFI/alpine
+
+# install syslinux (some modules should be optional)
+cp /mnt/usr/share/syslinux/efi64/* /mnt/boot/efi/EFI/syslinux/
+
+# modify /etc/update-extlinux.conf
+UUID_ENCRYPTED_PARTITION=$(blkid | grep ${DEVNAME_PHYSICAL_DISC} | grep crypto_LUKS | sed -e "s/.* UUID=\"//" | sed -e "s/\" .*//")
+UUID_DECRYPTED_LOGIGAL_ROOT_PARTITION=$(blkid | grep ${DEVNAME_DECRYPTED_VOLGROUP} | grep root | sed -e "s/.* UUID=\"//" | sed -e "s/\" .*//")
+sed -e "/^default_kernel_opts=/s/=.*/=\"quiet cryptroot=UUID=${UUID_ENCRYPTED_PARTITION} cryptdm=${DEVNAME_DECRYPTED_PARTITION}\"/" /mnt/etc/update-extlinux.conf | \
+  sed -e "/^modules=/s/=.*/=sd-mod,usb-storage,ext4,cryptsetup,keymap,kms,lvm/" | \
+  sed -e "/^root=/s/=.*/=UUID=${UUID_DECRYPTED_LOGICAL_ROOT_PARTITION}/" > /tmp/update-extlinux.conf
+cp /tmp/update-extlinux.conf /mnt/etc/update-extlinux.conf
+
+# setup the chroot
+mount -t proc /proc /mnt/proc
+mount --rbind /dev /mnt/dev
+mount --make-rslave /mnt/dev
+mount --rbind /sys /mnt/sys
+
+# enter the freshly installed system with chroot
+chroot /mnt
+source /etc/profile
+export PS1="(chroot) $PS1"
+
+# generate extlinux.conf and patch paths
+update-extlinux
+cp /boot/extlinux.conf /boot/efi/EFI/syslinux/
+cp /boot/vmlinuz-lts /boot/efi/EFI/alpine/
+cp /boot/initramfs-lts /boot/efi/EFI/alpine/
+
+# delete grub components
+apk del grub grub-efi
+find / | grep grub | xargs -I% rm -rf %
+
+# cleanup chroot and its mounts
+exit
+umount -l /mnt/dev
+umount -l /mnt/proc
+umount -l /mnt/sys
+
+# register syslinux in the UEFI firmware
+efibootmgr --create --label "Alpine Linux" --disk ${DEVNAME_PHYSICAL_DISC} --part 1 --loader /EFI/syslinux/syslinux.efi --unicode
+```
+
+
 ## Post install
 
 ### Issue: no autologin in gdm
