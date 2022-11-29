@@ -2,11 +2,11 @@
 A memorization help for myself to remember what i have done to setup my laptop workstation
 
 Basically i run a partial disc entryption with unencrypted EFI and encrypted
-root using syslinux EFI. Desktop wise i use gnome-shell.
+root using EFI STUB. Desktop wise i use gnome-shell.
 
 ## Installing to disk
 This notes take some implicit assumptions regarding disk naming and the use
-of an uefi capable machine as well as booting with syslinux efi.
+of an uefi capable machine as well as booting with EFI STUB.
 
 The installation process contains some variables. These made my work easier
 
@@ -76,7 +76,8 @@ apk upgrade -a
 
 ### Step eleven: install needed tools
 ```sh
-apk add lvm2 util-linux cryptsetup e2fsprogs dosfstools cfdisk mkinitfs syslinux efibootmgr
+# intel-ucode may not be needed for you
+apk add lvm2 util-linux cryptsetup e2fsprogs dosfstools cfdisk mkinitfs efibootmgr intel-ucode
 ```
 
 ### Step twelve: raw partitioning
@@ -171,28 +172,15 @@ sed -e "s/features=\".*\"/features=\"${INITRAMFS_MODULES\"/" /mnt/etc/mkinitfs/m
 mkinitfs -c /mnt/etc/mkinitfs/mkinitfs.conf -b /mnt/ $(ls /mnt/lib/modules/)
 ```
 
-### Step nineteen: add syslinux EFI to the game
+### Step nineteen: use EFI stub as bootloader
 alpine as by the time of writing only supports the automatic install of
-syslinux in DOS/MBR mode. This does not fit my usecase, so some adjustments
-have to be made
+grub. This does not fit my usecase, so some adjustments have to be made
 
-when a kernel update comes, the copy steps of vmlinuz and initramfs to EFI
-partition have to be done by hand (as of time of writing)
+when a kernel update comes, the copy steps of vmlinuz and initramfs and 
+intel-ucode to EFI partition have to be done by hand (as of time of writing)
 ```sh
 # create dirs in the EFI partition
-mkdir -p /mnt/boot/efi/EFI/syslinux
 mkdir -p /mnt/boot/efi/EFI/alpine
-
-# install syslinux (some modules should be optional)
-cp /mnt/usr/share/syslinux/efi64/* /mnt/boot/efi/EFI/syslinux/
-
-# modify /etc/update-extlinux.conf
-UUID_ENCRYPTED_PARTITION=$(blkid | grep ${DEVNAME_PHYSICAL_DISC} | grep crypto_LUKS | sed -e "s/.* UUID=\"//" | sed -e "s/\" .*//")
-UUID_DECRYPTED_LOGIGAL_ROOT_PARTITION=$(blkid | grep ${DEVNAME_DECRYPTED_VOLGROUP} | grep root | sed -e "s/.* UUID=\"//" | sed -e "s/\" .*//")
-sed -e "/^default_kernel_opts=/s/=.*/=\"quiet cryptroot=UUID=${UUID_ENCRYPTED_PARTITION} cryptdm=${DEVNAME_DECRYPTED_PARTITION}\"/" /mnt/etc/update-extlinux.conf | \
-  sed -e "/^modules=/s/=.*/=sd-mod,usb-storage,ext4,cryptsetup,keymap,kms,lvm/" | \
-  sed -e "/^root=/s/=.*/=UUID=${UUID_DECRYPTED_LOGICAL_ROOT_PARTITION}/" > /tmp/update-extlinux.conf
-cp /tmp/update-extlinux.conf /mnt/etc/update-extlinux.conf
 
 # setup the chroot
 mount -t proc /proc /mnt/proc
@@ -205,18 +193,17 @@ chroot /mnt
 source /etc/profile
 export PS1="(chroot) $PS1"
 
-# generate extlinux.conf and patch paths to point to /EFI/alpine/
-update-extlinux
-sed -e "s/LINUX vm/LINUX \/EFI\/alpine\/vm/" /boot/extlinux.conf |\
-  sed -e "s/INITRD init/INITRD \/EFI\/alpine\/init/" > /boot/efi/EFI/syslinux/extlinux.conf
-
 # copy finished config, kernel and initramfs to EFI partition
-cp /boot/extlinux.conf /boot/efi/EFI/syslinux/
 cp /boot/vmlinuz-lts /boot/efi/EFI/alpine/
 cp /boot/initramfs-lts /boot/efi/EFI/alpine/
+cp /boot/intel-ucode.img /boot/efi/EFI/alpine/
+
+cp /boot/efi/EFI/alpine/vmlinuz-lts /boot/efi/EFI/alpine/vmlinuz-lts-old
+cp /boot/efi/EFI/alpine/initramfs-lts /boot/efi/EFI/alpine/initramfs-lts-old
+cp /boot/efi/EFI/alpine/intel-ucode.img /boot/efi/EFI/alpine/intel-ucode-old.img
 
 # delete grub components
-apk del grub grub-efi
+apk del grub grub-efi syslinux
 find / | grep grub | xargs -I% rm -rf %
 
 # cleanup chroot and its mounts
@@ -225,8 +212,33 @@ umount -l /mnt/dev
 umount -l /mnt/proc
 umount -l /mnt/sys
 
-# register syslinux in the UEFI firmware
-efibootmgr --create --label "Alpine Linux" --disk ${DEVNAME_PHYSICAL_DISC} --part 1 --loader /EFI/syslinux/syslinux.efi --unicode
+# register kernel as bootloader in uefi interface (old kernel version)
+UUID_ENCRYPTED_PARTITION=$(blkid | grep ${DEVNAME_PHYSICAL_DISC} | grep crypto_LUKS | sed -e "s/.* UUID=\"//" | sed -e "s/\" .*//")
+UUID_DECRYPTED_LOGIGAL_ROOT_PARTITION=$(blkid | grep ${DEVNAME_DECRYPTED_VOLGROUP} | grep root | sed -e "s/.* UUID=\"//" | sed -e "s/\" .*//")
+
+# previous kernel
+KERNEL_ARGS_OLD="quiet root=UUID=${UUID_DECRYPTED_LOGICAL_ROOT_PARTITION} \
+modules=sd-mod,usb-storage,ext4,cryptsetup,keymap,kms,lvm \
+cryptroot=UUID=${UUID_ENCRYPTED_PARTITION} cryptdm=${DEVNAME_DECRYPTED_PARTITION} \
+initrd=\EFI\alpine\intel-ucode-old.img \
+initrd=\EFI\alpine\initramfs-lts-old"
+
+efibootmgr --create --label "ALPINE LINUX (EFI STUB) - PREVIOUS" \
+--disk /dev/${DEVNAME_PHYSICAL_DISC} --part 1 \
+--loader /EFI/alpine/vmlinuz-lts-old \
+--unicode "${KERNEL_ARGS_OLD}"
+
+# latest kernel
+KERNEL_ARGS="quiet root=UUID=${UUID_DECRYPTED_LOGICAL_ROOT_PARTITION} \
+modules=sd-mod,usb-storage,ext4,cryptsetup,keymap,kms,lvm \
+cryptroot=UUID=${UUID_ENCRYPTED_PARTITION} cryptdm=${DEVNAME_DECRYPTED_PARTITION} \
+initrd=\EFI\alpine\intel-ucode.img \
+initrd=\EFI\alpine\initramfs-lts"
+
+efibootmgr --create --label "ALPINE LINUX (EFI STUB) - LATEST" \
+--disk /dev/${DEVNAME_PHYSICAL_DISC} --part 1 \
+--loader /EFI/alpine/vmlinuz-lts \
+--unicode "${KERNEL_ARGS}"
 ```
 
 
