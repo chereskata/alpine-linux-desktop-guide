@@ -64,7 +64,7 @@ setup-ntp
 ```sh
 setup-apkrepos
 # change mirror to https
-sed -e "s/https/http/" /etc/apk/repositories > /tmp/repositories
+sed -e "s/http/https/" /etc/apk/repositories > /tmp/repositories
 cp /tmp/repositories /etc/apk/repositories
 
 apk update
