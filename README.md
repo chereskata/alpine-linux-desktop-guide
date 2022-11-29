@@ -145,7 +145,7 @@ swapon /dev/mapper/${DEVNAME_DECRYPTED_VOLGROUP}-swap
 
 # mount the EFI partition inside /mnt/boot
 mkdir -p /mnt/boot/efi
-mount -t vfat /dev/nvme0n1p1 /mnt/boot/efi/
+mount -t vfat /dev/${DEVNAME_EFI_PARTITION} /mnt/boot/efi/
 
 # finally the setup
 setup-disk -m sys /mnt/
@@ -202,8 +202,12 @@ chroot /mnt
 source /etc/profile
 export PS1="(chroot) $PS1"
 
-# generate extlinux.conf and patch paths
+# generate extlinux.conf and patch paths to point to /EFI/alpine/
 update-extlinux
+sed -e "s/LINUX vm/LINUX \/EFI\/alpine\/vm/" /boot/extlinux.conf |\
+  sed -e "s/INITRD init/INITRD \/EFI\/alpine\/init/ > /boot/efi/EFI/syslinux/extlinux.conf
+
+# copy finished config, kernel and initramfs to EFI partition
 cp /boot/extlinux.conf /boot/efi/EFI/syslinux/
 cp /boot/vmlinuz-lts /boot/efi/EFI/alpine/
 cp /boot/initramfs-lts /boot/efi/EFI/alpine/
