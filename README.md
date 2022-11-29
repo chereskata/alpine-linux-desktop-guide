@@ -4,6 +4,15 @@ A memorization help for myself to remember what i have done to setup my laptop w
 ## Post install
 
 ### Issue: no autologin in gdm
+As i use lvm on luks and am the sole user of my laptop, i have no need to
+type yet another password
+```sh
+# su without login shell, to keep the username of ${USER}
+su
+sed "/daemon/ a # Uncomment the two lines below to enable an automatic login\\
+AutomaticLoginEnable=true\\
+AutomaticLogin=${USER}" /etc/gdm/custom.conf > /etc/gdm/custom.conf
+```
 
 ### Issue: nftables missing
 This is the successor of iptables. Really miss [pf](https://why-openbsd.rocks/fact/pf/) of OpenBSD btw.
