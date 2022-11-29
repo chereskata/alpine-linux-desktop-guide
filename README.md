@@ -1,6 +1,9 @@
 # alpine-linux-desktop-guide
 A memorization help for myself to remember what i have done to setup my laptop workstation
 
+Basically i run a partial disc entryption with unencrypted EFI and encrypted
+root using syslinux EFI. Desktop wise i use gnome-shell.
+
 ## Installing to disk
 This notes take some implicit assumptions regarding disk naming and the use
 of an uefi capable machine as well as booting with syslinux efi.
