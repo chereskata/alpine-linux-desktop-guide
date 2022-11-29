@@ -90,10 +90,10 @@ EFI partition will hold bootloader, kernel and initramfs an is FAT32
 Linux partition will be encrypted with LUKS later on
 ```sh
 # overwrite first 100M with junk (could be sda instead of nvme0n1)
-DEVNAME_PHYSICAL_DISC="nvme0n1"
-dd if=/dev/urandom/ of=/dev/${DEVNAME_PHYSICAL_DISC} count=200000
+DEVNAME_PHYSICAL_DISK="nvme0n1"
+dd if=/dev/urandom/ of=/dev/${DEVNAME_PHYSICAL_DISK} count=200000
 # partitioning tool (could be automated)
-cfdisk /dev/${DEVNAME_PHYSICAL_DISC}
+cfdisk /dev/${DEVNAME_PHYSICAL_DISK}
 ```
 
 ### Step thirteen: raw partition formatting
@@ -101,7 +101,7 @@ cfdisk /dev/${DEVNAME_PHYSICAL_DISC}
 DEVNAME_EFI_PARTITION=""
 DEVNAME_ENCRYPTED_PARTITION=""
 # nvme drives have partition names pX instead of X
-case ${DEVNAME_PHYSICAL_DISC} in
+case ${DEVNAME_PHYSICAL_DISK} in
   *nvme*)
     DEVNAME_EFI_PARTITION=${DEVNAME_PHYSICAL_DISK}p1
     DEVNAME_ENCRYPTED_PARTITION=${DEVNAME_PHYSICAL_DISK}p2
@@ -213,7 +213,7 @@ umount -l /mnt/proc
 umount -l /mnt/sys
 
 # register kernel as bootloader in uefi interface (old kernel version)
-UUID_ENCRYPTED_PARTITION=$(blkid | grep ${DEVNAME_PHYSICAL_DISC} | grep crypto_LUKS | sed -e "s/.* UUID=\"//" | sed -e "s/\" .*//")
+UUID_ENCRYPTED_PARTITION=$(blkid | grep ${DEVNAME_PHYSICAL_DISK} | grep crypto_LUKS | sed -e "s/.* UUID=\"//" | sed -e "s/\" .*//")
 UUID_DECRYPTED_LOGIGAL_ROOT_PARTITION=$(blkid | grep ${DEVNAME_DECRYPTED_VOLGROUP} | grep root | sed -e "s/.* UUID=\"//" | sed -e "s/\" .*//")
 
 # previous kernel
@@ -224,7 +224,7 @@ initrd=\EFI\alpine\intel-ucode-old.img \
 initrd=\EFI\alpine\initramfs-lts-old"
 
 efibootmgr --create --label "ALPINE LINUX (EFI STUB) - PREVIOUS" \
---disk /dev/${DEVNAME_PHYSICAL_DISC} --part 1 \
+--disk /dev/${DEVNAME_PHYSICAL_DISK} --part 1 \
 --loader /EFI/alpine/vmlinuz-lts-old \
 --unicode "${KERNEL_ARGS_OLD}"
 
@@ -236,7 +236,7 @@ initrd=\EFI\alpine\intel-ucode.img \
 initrd=\EFI\alpine\initramfs-lts"
 
 efibootmgr --create --label "ALPINE LINUX (EFI STUB) - LATEST" \
---disk /dev/${DEVNAME_PHYSICAL_DISC} --part 1 \
+--disk /dev/${DEVNAME_PHYSICAL_DISK} --part 1 \
 --loader /EFI/alpine/vmlinuz-lts \
 --unicode "${KERNEL_ARGS}"
 ```
