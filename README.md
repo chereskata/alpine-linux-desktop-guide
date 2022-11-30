@@ -204,6 +204,11 @@ cp /boot/efi/EFI/alpine/intel-ucode.img /boot/efi/EFI/alpine/intel-ucode-old.img
 # delete grub components
 apk del grub grub-efi syslinux
 find / | grep grub | xargs -I% rm -rf %
+find / | grep syslinux | xargs -I% rm -rf %
+find / | grep extlinux | xargs -I% rm -rf %
+
+# add apparmor
+apk add apparmor apparmor-utils
 
 # cleanup chroot and its mounts
 exit
@@ -218,6 +223,7 @@ UUID_DECRYPTED_LOGICAL_ROOT_PARTITION=$(blkid | grep ${DEVNAME_DECRYPTED_VOLGROU
 # previous kernel
 KERNEL_ARGS_OLD="quiet root=UUID=${UUID_DECRYPTED_LOGICAL_ROOT_PARTITION} \
 modules=sd-mod,usb-storage,ext4,cryptsetup,keymap,kms,lvm \
+lsm=capability,landlock,yama,apparmor \
 cryptroot=UUID=${UUID_ENCRYPTED_PARTITION} cryptdm=${DEVNAME_DECRYPTED_PARTITION} \
 initrd=\EFI\alpine\intel-ucode-old.img \
 initrd=\EFI\alpine\initramfs-lts-old"
@@ -230,6 +236,7 @@ efibootmgr --create --label "ALPINE LINUX (EFI STUB) - PREVIOUS" \
 # latest kernel
 KERNEL_ARGS="quiet root=UUID=${UUID_DECRYPTED_LOGICAL_ROOT_PARTITION} \
 modules=sd-mod,usb-storage,ext4,cryptsetup,keymap,kms,lvm \
+lsm=capability,landlock,yama,apparmor \
 cryptroot=UUID=${UUID_ENCRYPTED_PARTITION} cryptdm=${DEVNAME_DECRYPTED_PARTITION} \
 initrd=\EFI\alpine\intel-ucode.img \
 initrd=\EFI\alpine\initramfs-lts"
