@@ -54,8 +54,7 @@ rc-service acpid start
 ### Step eight: point hostname domain to local host ip
 ```sh
 HOSTNAME=$(echo /etc/hostname)
-sed -e "s/localhost /${HOSTNAME} localhost /" /etc/hosts > /tmp/hosts
-cp /tmp/hosts /etc/hosts
+sed -i -e "s/localhost /${HOSTNAME} localhost /" /etc/hosts
 ```
 
 ### Step nine: enable ntp
@@ -67,8 +66,7 @@ setup-ntp
 ```sh
 setup-apkrepos
 # change mirror to https
-sed -e "s/http/https/" /etc/apk/repositories > /tmp/repositories
-cp /tmp/repositories /etc/apk/repositories
+sed -i -e "s/http/https/" /etc/apk/repositories
 
 apk update
 apk upgrade -a
@@ -167,7 +165,7 @@ setup-disk -m sys /mnt/
 ### Step eighteen: change initramfs modules to the ones needed
 ```sh
 INITRAMFS_MODULES="base usb ext4 lvm nvme cryptsetup keymap nvme"
-sed -e "s/features=\".*\"/features=\"${INITRAMFS_MODULES\"/" /mnt/etc/mkinitfs/mkinitfs.conf
+sed -i -e "s/features=\".*\"/features=\"${INITRAMFS_MODULES\"/" /mnt/etc/mkinitfs/mkinitfs.conf
 # note: your range may differ
 mkinitfs -c /mnt/etc/mkinitfs/mkinitfs.conf -b /mnt/ $(ls /mnt/lib/modules/)
 ```
@@ -242,7 +240,13 @@ efibootmgr --create --label "ALPINE LINUX (EFI STUB) - LATEST" \
 ```
 
 
-## Post install
+## Fix inconveniences
+
+### Issue: openrc does not log anything
+```sh
+su -l
+sed -i -e "s/^#rc_logger=\"NO\"/rc_logger=\"YES\"/" /etc/rc.conf
+```
 
 ### Issue: no autologin in gdm
 As i use lvm on luks and am the sole user of my laptop, i have no need to
@@ -250,9 +254,9 @@ type yet another password
 ```sh
 # su without login shell, to keep the username of ${USER}
 su
-sed "/daemon/ a # Uncomment the two lines below to enable an automatic login\\
+sed -i "/daemon/ a # Uncomment the two lines below to enable an automatic login\\
 AutomaticLoginEnable=true\\
-AutomaticLogin=${USER}" /etc/gdm/custom.conf > /etc/gdm/custom.conf
+AutomaticLogin=${USER}" /etc/gdm/custom.conf
 ```
 
 ### Issue: nftables missing
