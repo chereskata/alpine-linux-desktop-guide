@@ -2,7 +2,8 @@
 A memorization help for myself to remember what i have done to setup my laptop workstation
 
 Basically i run a partial disc entryption with unencrypted EFI and encrypted
-root using EFI STUB. Desktop wise i use gnome-shell.
+root using EFI STUB. Desktop wise i use gnome-shell. I aim to make the
+install reasonably secure
 
 ## Installing to disk
 This notes take some implicit assumptions regarding disk naming and the use
@@ -123,7 +124,7 @@ mkfs.fat -F32 /dev/${DEVNAME_EFI_PARTITION}
 DEVNAME_DECRYPTED_PARTITION=${DEVNAME_ENCRYPTED_PARTITION}.dec
 DEVNAME_DECRYPTED_VOLGROUP=${DEVNAME_ENCRYPTED_PARTITION}.vg
 
-cryptsetup open /dev/nvme0n1p2 ${DEVNAME_DECRYPTED_PARTITION}
+cryptsetup open /dev/${DEVNAME_ENCRYPTED_PARTITION} ${DEVNAME_DECRYPTED_PARTITION}
 pvcreate /dev/mapper/${DEVNAME_DECRYPTED_PARTITION}
 vgcreate ${DEVNAME_DECRYPTED_VOLGROUP} /dev/mapper/${DEVNAME_DECRYPTED_PARTITION}
 
@@ -147,7 +148,7 @@ swapon /dev/mapper/${DEVNAME_DECRYPTED_VOLGROUP}-swap
 
 # mount the EFI partition inside /mnt/boot
 mkdir -p /mnt/boot/efi
-mount -t vfat /dev/${DEVNAME_EFI_PARTITION} /mnt/boot/efi/
+mount -t vfat -o fmask=0177,dmask=0077 /dev/${DEVNAME_EFI_PARTITION} /mnt/boot/efi/
 
 # finally the setup
 setup-disk -m sys /mnt/
@@ -245,7 +246,8 @@ efibootmgr --create --label "ALPINE LINUX (EFI STUB) - LATEST" \
 ### Issue: openrc does not log anything
 ```sh
 su -l
-sed -i -e "s/^#rc_logger=\"NO\"/rc_logger=\"YES\"/" /etc/rc.conf
+sed -i -e "s/^#rc_logger=.*/rc_logger=\"YES\"/" /etc/rc.conf
+sed -i -e "s/^#rc_verbose=.*/rc_verbose=yes/" /etc/rc.conf
 ```
 
 ### Issue: no autologin in gdm
