@@ -294,7 +294,7 @@ for me.
 As by suggestion of user ikke on [irc](https://wiki.alpinelinux.org/wiki/Alpine_Linux:IRC), you have to 
 hide the safe-mode .desktop entries from gnome-shell, because it maps them
 even to the regular firefox and firefox-esr executables. So in fact firefox
-does not launch in safe mode at all if you click the safe mode icon explicity
+does not launch in safe mode at all if you don't click the safe mode icon explicity
 ```sh
 # for firefox -esr
 (cat /usr/share/applications/firefox-esr-safe.desktop; echo Hidden=true) > ~/.local/share/applications/firefox-esr-safe.desktop
