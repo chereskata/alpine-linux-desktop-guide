@@ -138,6 +138,15 @@ lvcreate -l 100%FREE ${DEVNAME_DECRYPTED_VOLGROUP} -n root
 mkswap /dev/mapper/${DEVNAME_DECRYPTED_VOLGROUP}-swap
 mkfs.ext4 /dev/mapper/${DEVNAME_DECRYPTED_VOLGROUP}-root
 ```
+As of now the `lsblk` command should yield to something like this:
+```
+nvme0n1                 259:0    0 931.5G  0 disk
+├─nvme0n1p1             259:1    0   256M  0 part
+└─nvme0n1p2             259:2    0 931.3G  0 part
+  └─nvme0n1p2.dec       253:0    0 931.2G  0 crypt
+    ├─nvme0n1p2.vg-swap 253:1    0     2G  0 lvm
+    └─nvme0n1p2.vg-root 253:2    0 929.2G  0 lvm
+```
 
 ### Step sixteen: install to disk
 ```sh
