@@ -250,11 +250,28 @@ efibootmgr --create --label "ALPINE LINUX (EFI STUB) - LATEST" \
 
 ## Fix inconveniences
 
+### Issue: EFI stub boots old kernel only, EFI/alpine is not updated automatically
+As EFI Stub booting has (in my knowledge) no automatic kernel and initramfs updating
+script, manual copying of the latest kernel and initramfs to the EFI partition is
+necessary.
+```sh
+su -l
+# backup old kernel and initramfs combo (has also a boot entry)
+cp /boot/efi/EFI/alpine/vmlinuz-lts /boot/efi/EFI/alpine/vmlinuz-lts-old
+cp /boot/efi/EFI/alpine/initramfs-lts /boot/efi/EFI/alpine/initramfs-lts-old
+
+# copy latest kernel and initramfs combo to EFI
+cp /boot/vmlinuz-lts /boot/efi/EFI/alpine/vmlinuz-lts
+cp /boot/initramfs-lts /boot/efi/EFI/alpine/initramfs-lts
+exit
+```
+
 ### Issue: openrc does not log anything
 ```sh
 su -l
 sed -i -e "s/^#rc_logger=.*/rc_logger=\"YES\"/" /etc/rc.conf
 sed -i -e "s/^#rc_verbose=.*/rc_verbose=yes/" /etc/rc.conf
+exit
 ```
 
 ### Issue: no autologin in gdm
@@ -266,6 +283,7 @@ su
 sed -i "/daemon/ a # Uncomment the two lines below to enable an automatic login\\
 AutomaticLoginEnable=true\\
 AutomaticLogin=${USER}" /etc/gdm/custom.conf
+exit
 ```
 
 ### Issue: nftables missing
@@ -277,6 +295,7 @@ apk add nftables
 rc-update add nftables boot
 
 # note: you still should review the default ruleset
+exit
 ```
 
 ### Issue: gnome-keyring is auto-launching on login
