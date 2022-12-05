@@ -84,6 +84,7 @@ First of all a gpt partition is needed with following layout
 | first partition | second partition |
 | --- | --- |
 | EFI (topmost item) | Linux (Default) |
+| 256M | ${FREE} |
 
 EFI partition will hold bootloader, kernel and initramfs an is FAT32
 Linux partition will be encrypted with LUKS later on
