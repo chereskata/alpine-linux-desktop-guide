@@ -323,7 +323,8 @@ for me.
 As by suggestion of user ikke on [irc](https://wiki.alpinelinux.org/wiki/Alpine_Linux:IRC), you have to 
 hide the safe-mode .desktop entries from gnome-shell, because it maps them
 even to the regular firefox and firefox-esr executables. So in fact firefox
-does not launch in safe mode at all if you don't click the safe mode icon explicity
+does not launch in safe mode at all if you don't click the safe mode icon
+explicity
 ```sh
 # for firefox -esr
 (cat /usr/share/applications/firefox-esr-safe.desktop; echo Hidden=true) > ~/.local/share/applications/firefox-esr-safe.desktop
@@ -332,3 +333,47 @@ does not launch in safe mode at all if you don't click the safe mode icon explic
 (cat /usr/share/applications/firefox-safe.desktop; echo Hidden=true) > ~/.local/share/applications/firefox-safe.desktop
 ```
 
+### Issue: gkt3 applications look a bit 'dated'
+The github user lassekongo83 provides a [GTK3 theme](https://github.com/lassekongo83/adw-gtk3) that resemles libadwaita really well.
+That theme should be rather easy to add to the alpine package repo.
+An install guide is provided.
+
+### Issue: default Cantarell font doesn't look crisp on average DPI LCD
+To reduce eyestrain i looked around to replace the default fonts. Apple provides
+the excellent San-Francisco font pack. They can be applied easily.
+```sh
+mkdir /tmp/applefonts
+cd /tmp/applefonts
+curl -O https://devimages-cdn.apple.com/design/resources/download/SF-Pro.dmg
+curl -O https://devimages-cdn.apple.com/design/resources/download/SF-Mono.dmg
+
+# some unused ones
+#curl -O https://devimages-cdn.apple.com/design/resources/download/NY.dmg
+#curl -O https://devimages-cdn.apple.com/design/resources/download/SF-Compact.dmg
+
+# extract the dmg
+7z x SF-Pro.dmg
+7z x 'SFProFonts/SF Pro Fonts.pkg'
+7z x 'Payload~'
+# and
+7z x SF-Mono.dmg
+7z x -aoa 'SFMonoFonts/SF Mono Fonts.pkg'
+7z x -aoa 'Payload~'
+
+# install it systemwide
+su
+cp Library/Fonts/*.otf /usr/share/fonts/OTF/
+chmod 644 /usr/share/fonts/OTF/SF-*.otf
+exit
+```
+After relogin:
+```sh
+# apply new fonts
+gsettings set org.gnome.desktop.wm.preferences titlebar-font 'SF Pro Display 11'
+gsettings set org.gnome.desktop.interface document-font-name 'SF Pro Display 11'
+gsettings set org.gnome.desktop.interface font-name 'SF Pro Display 11'
+gsettings set org.gnome.desktop.interface monospace-font-name 'SF Mono Medium 10'
+# for gnome builder
+gsettings set org.gnome.builder.editor font-name 'SF Mono Medium 10'
+gsettings set org.gnome.builder.terminal font-name 'SF Mono Medium 10'
+```
