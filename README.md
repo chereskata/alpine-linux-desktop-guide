@@ -373,7 +373,11 @@ gsettings set org.gnome.desktop.wm.preferences titlebar-font 'SF Pro Display 11'
 gsettings set org.gnome.desktop.interface document-font-name 'SF Pro Display 11'
 gsettings set org.gnome.desktop.interface font-name 'SF Pro Display 11'
 gsettings set org.gnome.desktop.interface monospace-font-name 'SF Mono Medium 10'
+gsettings set org.gnome.desktop.interface font-hinting 'none'
+gsettings set org.gnome.desktop.interface font-antialiasing 'grayscale'
 # for gnome builder
 gsettings set org.gnome.builder.editor font-name 'SF Mono Medium 10'
 gsettings set org.gnome.builder.terminal font-name 'SF Mono Medium 10'
+# for gnome texteditior
+gsettings set org.gnome.TextEditor use-system-font true
 ```
