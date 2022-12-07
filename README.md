@@ -11,7 +11,7 @@ of an uefi capable machine as well as booting with EFI STUB.
 
 The installation process contains some variables. These made my work easier
 
-### Step zero: create the installation media
+## Step zero: create the installation media
 Gather the install media from [here](https://alpinelinux.org/downloads/)
 and dd it to your storage. For example
 ```sh
@@ -167,7 +167,7 @@ setup-disk -m sys /mnt/
 ### Step seventeen: fix swap missing in /mnt/etc/fstab
 ```sh
 # search swap partition by UUID and add fstab entry for it
-(blkid | grep swap | sed -e "s/.* UUID=\"/UUID=/" | sed -e "s/\" .*/    swap    swap    defaults    0 0 /") >> /etc/fstab
+(blkid | grep swap | sed -e "s/.* UUID=\"/UUID=/" | sed -e "s/\" .*/    none    swap    defaults    0 0 /") >> /etc/fstab
 # note: i am not sure if other partitions are by uuid or by path
 #       all mounts without UUID should be replaced with UUID notion where
 #       applicable
@@ -259,6 +259,15 @@ efibootmgr --create --label "ALPINE LINUX (EFI STUB) - LATEST" \
 
 
 ## Fix inconveniences
+
+### Issue: swapping is not defensive
+I want to keep the NVMe in good health, so the system should only
+swap to disk when not inevitable.
+```sh
+su -l
+echo "vm.swappiness = 1" > /etc/sysctl.d/swappiness.conf
+exit
+``` 
 
 ### Issue: EFI stub boots old kernel only, EFI/alpine is not updated automatically
 As EFI Stub booting has (in my knowledge) no automatic kernel and initramfs updating
