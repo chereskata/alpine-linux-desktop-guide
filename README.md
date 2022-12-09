@@ -11,7 +11,7 @@ of an uefi capable machine as well as booting with EFI STUB.
 
 The installation process contains some variables. These made my work easier
 
-## Step zero: create the installation media
+### Step zero: create the installation media
 Gather the install media from [here](https://alpinelinux.org/downloads/)
 and dd it to your storage. For example
 ```sh
@@ -259,6 +259,15 @@ efibootmgr --create --label "ALPINE LINUX (EFI STUB) - LATEST" \
 
 
 ## Fix inconveniences
+
+### Issue: pam does allow weak ciphers in /etc/shadow by default
+Even sha512 seems subobtimal, as Debian uses [yescrypt](https://www.debian.org/releases/bullseye/amd64/release-notes/ch-information.en.html#pam-default-password)
+```sh
+su -l
+sed -i -e "s/pam_unix.so.*$/pam_unix.so        sha512/" /etc/pam.d/base-password
+exit
+```
+To apply the changes, all passwords have to be changed with `passwd`
 
 ### Issue: swapping is not defensive
 I want to keep the NVMe in good health, so the system should only
