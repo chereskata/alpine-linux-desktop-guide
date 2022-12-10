@@ -167,8 +167,8 @@ setup-disk -m sys /mnt/
 ### Step seventeen: fix swap missing in /mnt/etc/fstab
 ```sh
 # search swap partition by UUID and add fstab entry for it
-(blkid | grep swap | sed -e "s/.* UUID=\"/UUID=/" | sed -e "s/\" .*/    none    swap    defaults    0 0 /") >> /etc/fstab
-# note: i am not sure if other partitions are by uuid or by path
+(blkid | grep swap | sed -e "s/.* UUID=\"/UUID=/" | sed -e "s/\" .*/    swap    swap    sw    0 0 /") >> /etc/fstab
+# note: i am not sure if other partitions are by UUID or by path
 #       all mounts without UUID should be replaced with UUID notion where
 #       applicable
 ```
@@ -262,12 +262,20 @@ efibootmgr --create --label "ALPINE LINUX (EFI STUB) - LATEST" \
 
 ### Issue: pam does allow weak ciphers in /etc/shadow by default
 Even sha512 seems subobtimal, as Debian uses [yescrypt](https://www.debian.org/releases/bullseye/amd64/release-notes/ch-information.en.html#pam-default-password)
+But musl does not support it (yet)
 ```sh
 su -l
 sed -i -e "s/pam_unix.so.*$/pam_unix.so        sha512/" /etc/pam.d/base-password
 exit
 ```
 To apply the changes, all passwords have to be changed with `passwd`
+
+### Issue: swap automounting is not enabled by default
+```sh
+su -l
+rc-update add swap boot
+exit
+```
 
 ### Issue: swapping is not defensive
 I want to keep the NVMe in good health, so the system should only
@@ -335,6 +343,11 @@ for me.
 (cat /etc/xdg/autostart/gnome-keyring-ssh.desktop; echo Hidden=true) > ~/.config/autostart/gnome-keyring-ssh.desktop
 (cat /etc/xdg/autostart/gnome-keyring-pkcs11.desktop; echo Hidden=true) > ~/.config/autostart/gnome-keyring-pkcs11.desktop
 (cat /etc/xdg/autostart/gnome-keyring-secrets.desktop; echo Hidden=true) > ~/.config/autostart/gnome-keyring-secrets.desktop
+```
+
+### Issue: search only program names in gnome-shell searchbar
+```sh
+gsettings set org.gnome.desktop.search-providers disable-external true
 ```
 
 ### Issue: firefox(-esr) launches only in safe mode
