@@ -412,3 +412,21 @@ gsettings set org.gnome.builder.terminal font-name 'SF Mono Medium 10'
 # for gnome texteditior
 gsettings set org.gnome.TextEditor use-system-font true
 ```
+
+## Install some software
+
+### Virtual machines with QEMU + KVM + Virt-Manager
+```sh
+# necessary packages
+apk add virt-manager libvirt-daemon qemu-img qemu-system-x86_64 qemu-modules 
+
+# add virtual network interface drivers to autostart on demand
+su -l
+echo "tun" > /etc/modules-load.d/tun.conf
+exit
+
+# non root management of virtual machines (use for personal computers only)
+su -l
+addgroup user libvirt
+exit
+```
