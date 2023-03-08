@@ -43,12 +43,13 @@ rc-service networking restart
 ### Step six: some service related stuff
 ```sh
 rc-update add networking boot
-rc-update add urandom boot
+rc-update add seedrng boot
 rc-update add acpid default
 ```
 
-### Step seven: start powermanagement in live session
+### Step seven: start powermanagement and random number generator in live session
 ```sh
+rc-service seedrng start
 rc-service acpid start
 ```
 
@@ -362,6 +363,13 @@ explicity
 
 # for firefox
 (cat /usr/share/applications/firefox-safe.desktop; echo Hidden=true) > ~/.local/share/applications/firefox-safe.desktop
+```
+
+### Issue: apk package manager installs or updates without preview
+```sh
+su -l
+touch /etc/apk/interactive
+exit
 ```
 
 ### Issue: gkt3 applications look a bit 'dated'
