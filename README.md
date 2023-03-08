@@ -90,7 +90,7 @@ First of all a gpt partition is needed with following layout
 EFI partition will hold bootloader, kernel and initramfs an is FAT32
 Linux partition will be encrypted with LUKS later on
 ```sh
-# overwrite first 100M with junk (could be sda instead of nvme0n1)
+# overwrite first 100M with junk (could be sda instead of nvme0n1, check with lsblk)
 DEVNAME_PHYSICAL_DISK="nvme0n1"
 dd if=/dev/urandom/ of=/dev/${DEVNAME_PHYSICAL_DISK} count=200000
 # partitioning tool (could be automated)
