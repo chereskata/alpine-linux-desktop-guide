@@ -289,6 +289,9 @@ adduser ${USER} plugdev
 
 ### Step four: Enable NetworkManager with iwd
 ```sh
+# install networkmanager
+apk add netwotkmanager-wifi
+
 # copy the config
 echo "[main]
 dhcp=internal
