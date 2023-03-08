@@ -168,7 +168,7 @@ setup-disk -m sys /mnt/
 ### Step seventeen: fix swap missing in /mnt/etc/fstab
 ```sh
 # search swap partition by UUID and add fstab entry for it
-(blkid | grep swap | sed -e "s/.* UUID=\"/UUID=/" | sed -e "s/\" .*/    swap    swap    sw    0 0 /") >> /etc/fstab
+(blkid | grep swap | sed -e "s/.* UUID=\"/UUID=/" | sed -e "s/\" .*/    swap    swap    sw    0 0 /") >> /mnt/etc/fstab
 # note: i am not sure if other partitions are by UUID or by path
 #       all mounts without UUID should be replaced with UUID notion where
 #       applicable
