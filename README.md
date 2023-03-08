@@ -379,9 +379,10 @@ exit
 ```
 
 ### Issue: gkt3 applications look a bit 'dated'
-The github user lassekongo83 provides a [GTK3 theme](https://github.com/lassekongo83/adw-gtk3) that resemles libadwaita really well.
-That theme should be rather easy to add to the alpine package repo.
-An install guide is provided.
+```
+# testing repo should be active in /etc/apk/repositories
+apk add adw-gtk3
+```
 
 ### Issue: default Cantarell font doesn't look crisp on average DPI LCD
 To reduce eyestrain i looked around to replace the default fonts. Apple provides
