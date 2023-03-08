@@ -270,12 +270,10 @@ efibootmgr --create --label "ALPINE LINUX (EFI STUB) - LATEST" \
 ## Fix inconveniences
 
 ### Issue: pam does allow weak ciphers in /etc/shadow by default
-Even sha512 seems subobtimal, as Debian uses [yescrypt](https://www.debian.org/releases/bullseye/amd64/release-notes/ch-information.en.html#pam-default-password)
+sha512 seems subobtimal, as Debian uses [yescrypt](https://www.debian.org/releases/bullseye/amd64/release-notes/ch-information.en.html#pam-default-password)
 But musl does not support it (yet)
 ```sh
-su -l
-sed -i -e "s/pam_unix.so.*$/pam_unix.so        sha512/" /etc/pam.d/base-password
-exit
+# fixed upstream
 ```
 To apply the changes, all passwords have to be changed with `passwd`
 
