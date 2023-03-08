@@ -55,7 +55,7 @@ rc-service acpid start
 
 ### Step eight: point hostname domain to local host ip
 ```sh
-HOSTNAME=$(echo /etc/hostname)
+HOSTNAME=$(cat /etc/hostname)
 sed -i -e "s/localhost /${HOSTNAME} localhost /" /etc/hosts
 ```
 
