@@ -180,7 +180,7 @@ sed -i -e "/^\/dev\/cdrom/d" -e "/^\/dev/\/usbdisk/d" /mnt/etc/fstab
 ### Step eighteen: change initramfs modules to the ones needed
 ```sh
 INITRAMFS_MODULES="base usb ext4 lvm nvme cryptsetup keymap nvme"
-sed -i -e "s/features=\".*\"/features=\"${INITRAMFS_MODULES\"/" /mnt/etc/mkinitfs/mkinitfs.conf
+sed -i -e "s/features=\".*\"/features=\"${INITRAMFS_MODULES}\"/" /mnt/etc/mkinitfs/mkinitfs.conf
 # note: your range may differ
 mkinitfs -c /mnt/etc/mkinitfs/mkinitfs.conf -b /mnt/ $(ls /mnt/lib/modules/)
 ```
