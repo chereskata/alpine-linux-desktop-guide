@@ -174,7 +174,7 @@ setup-disk -m sys /mnt/
 #       applicable
 
 # delete cdrom and usbdisk entries (alpine bug - or feature :DD)
-sed -i -e "/^\/dev\/cdrom/d" -e "/^\/dev/\/usbdisk/d"
+sed -i -e "/^\/dev\/cdrom/d" -e "/^\/dev/\/usbdisk/d" /mnt/etc/fstab
 ```
 
 ### Step eighteen: change initramfs modules to the ones needed
