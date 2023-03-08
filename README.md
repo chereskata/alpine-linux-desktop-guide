@@ -224,6 +224,11 @@ find / | grep extlinux | xargs -I% rm -rf %
 # add apparmor
 apk add apparmor apparmor-utils
 
+
+# IMPORTANT: set a root password
+passwd
+
+
 # cleanup chroot and its mounts
 exit
 umount -l /mnt/dev
