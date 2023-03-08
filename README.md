@@ -172,6 +172,9 @@ setup-disk -m sys /mnt/
 # note: i am not sure if other partitions are by UUID or by path
 #       all mounts without UUID should be replaced with UUID notion where
 #       applicable
+
+# delete cdrom and usbdisk entries (alpine bug - or feature :DD)
+sed -i -e "/^\/dev\/cdrom/d" -e "/^\/dev/\/usbdisk/d"
 ```
 
 ### Step eighteen: change initramfs modules to the ones needed
