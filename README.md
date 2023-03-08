@@ -267,6 +267,65 @@ efibootmgr --create --label "ALPINE LINUX (EFI STUB) - LATEST" \
 ```
 
 
+## Add gnome desktop
+
+### Step one: Setup a user
+```sh
+setup-user
+```
+
+### Step two: Install gnome meta-package
+```sh
+setup-desktop gnome
+```
+
+### Step three: Add the GUI user to some groups
+```sh
+adduser ${USER} audio
+adduser ${USER} video
+# if plugdev is missing: addgroup plugdev
+adduser ${USER} plugdev
+```
+
+### Step four: Enable NetworkManager with iwd
+```sh
+# copy the config
+echo "[main]
+dhcp=internal
+dns=none
+#plugins=ifupdown,keyfile
+
+#[ifupdown]
+#managed=true
+
+[device]
+wifi.backend=iwd
+# "yes" is already the default for scanning
+wifi.scan-rand-mac-address=yes
+# Generate a random MAC for each WiFi and associate the two permanently.
+wifi.cloned-mac-address=stable
+
+[connection]
+ipv6.ip6-privacy=2" > /etc/NetworkManager/NetworkManager.conf
+
+# stop traditional networking services
+rc-service networking stop
+rc-update del networking boot
+rc-update del wpa_supplicant boot
+
+# register NetworkManager and iwd
+rc-update add iwd boot
+rc-update add networkmanager boot
+
+# delete config files of wpa_supplicant
+rm -rf /etc/wpa_supplicant
+
+# disable manual network configuration for every non loopback interface
+# delete every line besides the first two (containing lo) in
+# /etc/network/interfaces
+
+```
+
 ## Fix inconveniences
 
 ### Issue: pam does allow weak ciphers in /etc/shadow by default
