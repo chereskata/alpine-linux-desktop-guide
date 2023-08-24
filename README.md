@@ -506,4 +506,8 @@ exit
 su -l
 addgroup user libvirt
 exit
+
+# start libvirt daemon
+rc-update add libvirtd boot
+rc-service libvirtd start
 ```
