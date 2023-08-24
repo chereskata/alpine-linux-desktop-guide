@@ -371,6 +371,15 @@ cp /boot/initramfs-lts /boot/efi/EFI/alpine/initramfs-lts
 exit
 ```
 
+### Issue: coredumps are enabled by default
+coredumps can contain sensible in memory information, such as clear text passwords
+```sh
+su -l
+echo "kernel.core_pattern=/dev/null" > /etc/sysctl.d/coredump.conf
+exit
+```
+
+
 ### Issue: openrc does not log anything
 ```sh
 su -l
