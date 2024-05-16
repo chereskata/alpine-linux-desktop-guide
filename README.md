@@ -423,6 +423,16 @@ for me.
 (cat /etc/xdg/autostart/gnome-keyring-secrets.desktop; echo Hidden=true) > ~/.config/autostart/gnome-keyring-secrets.desktop
 ```
 
+Note: The code above does not longer work. You have to fiddle with `/etc/pam.d/` files and comment out all `-auth optional pam_gnome_keyring.so` lines like so:
+```sh
+find /etc/pam.d/ -type f | xargs -I% sed -i -e "/pam_gnome_keyring.so/d" %
+```
+Just the above does not nuke this annoying service. To do this you have to remove execute bits from the following files:
+```sh
+chmod -x /usr/libexec/gcr-ssh-*
+chmod -x /usr/bin/gnome-keyring*
+```
+
 ### Issue: search only program names in gnome-shell searchbar
 ```sh
 gsettings set org.gnome.desktop.search-providers disable-external true
